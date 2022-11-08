@@ -21,8 +21,10 @@ ret, fram = cap.read()
 
 print(ret)
 
-ser = serial.Serial('COM3', 9600, timeout=1)
-ser.reset_input_buffer()
+#ser = serial.Serial('COM3', 9600, timeout=1)
+#ser.reset_input_buffer()
+ser2 = serial.Serial('COM5', 9600, timeout=1)
+ser2.reset_input_buffer()
 
 x_initial, x_angle = 81, 81
 y_initial, y_angle = 75, 75
@@ -33,12 +35,13 @@ x_min = 0
 y_min = 60
 
 threshhold_size = 100
+preferred_size_min = 200
+preferred_size_max = 230
+
 
 while True:
 
     _, img = cap.read()
-
-    print(img.size)
 
     cv2.flip(img, 1, img)
 
@@ -73,9 +76,18 @@ while True:
     image_center_y = imsize[0] / 2
 
     speed = 1
+    wheel_speed = 3 #Kjøre frem eller tilbake
+
+    size = np.sqrt(size)
+    
 
     # if size er stor nok
-    if np.sqrt(size) > threshhold_size:
+    if size > threshhold_size:
+        
+        if size > preferred_size_max:
+            wheel_speed = 2
+        elif size < preferred_size_min:
+            wheel_speed = 1
 
         if abs(center_x - image_center_x) < 50:
             x_angle += 0
@@ -105,11 +117,15 @@ while True:
         elif y_angle < y_initial:
             y_angle += speed
     
+    
+
 
     x_angle = clamp(x_angle, x_min, x_max)
     y_angle = clamp(y_angle, y_min, y_max)
 
+    print(wheel_speed)
 
-    ser.write(bytes(str(x_angle) + "," + str(y_angle) + '\n', 'utf-8'))
-    print(str(x_angle) + "," + str(y_angle))
+    #ser.write(bytes(str(x_angle) + "," + str(y_angle) + '\n', 'utf-8'))
+    ser2.write(bytes(str(wheel_speed) + '\n', 'utf-8'))
+    #print(str(x_angle) + "," + str(y_angle))
     time.sleep(0.02)
